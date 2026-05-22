@@ -1,27 +1,74 @@
 import { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet } from "react-native";
-import api from "../services/api";
+import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator } from "react-native";
 
-export default function CepScreen() {
+import api from "../services/api";
+import { useApp } from "../context/AppContext";
+
+
+export default function CepScreen({ navigation }){
 
     const [cep, setCep] = useState('');
     const [dados, setDados] = useState(null);
 
+    const [loading, setLoading] = useState(false);
+    const [erro, setErro] = useState();
+
+    const { adicionarHistorico } = useApp();
+
+    function handleChangeCep(texto){
+            const apenasNumero = texto.replace(/\D/g, '').slice(0, 8);
+            setCep(apenasNumero);
+    }
+
     async function buscarCep() {
-        try{
+
+        if(cep.length !== 8){
+            setErro('Digite um CEP válido com 8 digitos.');
+            return;
+        }
+
+        setErro('');
+        setLoading(true);
+
+        try {
             const response = await api.get(`/${cep}/json`);
-            console.log(response.data);
-            setDados(response.data);
+            if(response.data.erro){
+                setErro('CEP não encontrado');
+                setDados(null);
+            } else {
+                setDados(response.data);
+                adicionarHistorico(response.data)
+            }
         } catch (error) {
-            alert('Erro ao buscar CEP')
+            setErro('Erro ao buscar CEP')
+        } finally {
+            setLoading(false);
         }
     }
 
     return(
         <View style={style.container}>
             <Text style={style.title}>Buscar CEP</Text>
-            <TextInput placeholder="Digite o Cep" style={style.input} value={cep} onChangeText={setCep} keyboardType="numeric"/>
-            <Button title="Buscar" onPress={buscarCep}/>
+            <TextInput
+                placeholder="Digite o CEP"
+                style={style.input}
+                value={cep}
+                onChangeText={handleChangeCep}
+                keyboardType="numeric"
+                maxLength={8}
+            />
+            <Button
+                title="Buscar"
+                onPress={buscarCep}
+            />
+
+            {erro !== '' && (
+                <Text style={style.erro}>{erro}</Text>
+            )}
+            
+            {loading && (
+                <ActivityIndicator size={"large"} color="#FF0000" style={{marginTop: 20}}/>
+            )}
 
             {dados && (
                 <View style={style.resultado}>
@@ -29,8 +76,18 @@ export default function CepScreen() {
                     <Text>Bairro: {dados.bairro}</Text>
                     <Text>Cidade: {dados.localidade}</Text>
                     <Text>Estado: {dados.uf}</Text>
+                    <Text>DDD: {dados.ddd}</Text>
                 </View>
             )}
+
+            <View style={{marginTop: 20}}>
+                <Button
+                    title="Ver Historico"
+                    onPress={() => navigation.navigate('Historico')}
+                    color="#666"
+                />
+            </View>
+
         </View>
     )
 }
@@ -55,6 +112,9 @@ const style = StyleSheet.create({
     resultado: {
         marginTop: 20,
         gap: 5
+    },
+    erro: {
+        color: 'red',
+        marginTop: 10
     }
-
-});
+})

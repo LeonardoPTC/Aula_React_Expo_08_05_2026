@@ -1,17 +1,28 @@
 import { View, Text, Button, StyleSheet } from "react-native";
 
-export default function HomeScreen({navigation}) {
+export default function HomeScreen({navigation}){
     return(
         <View style={style.container}>
             <Text style={style.title}>Buscar CEP</Text>
-            <Button title="Buscar CEP" onPress={() => navigation.navigate("Cep")}/>
+            <Button
+                title="Buscar CEP"
+                onPress={() =>
+                    navigation.navigate('Cep')
+                }
+            />
+            <Button
+                title="Geolocalização"
+                onPress={() =>
+                    navigation.navigate('Geo')
+                }
+            />
         </View>
     )
 }
 
 const style = StyleSheet.create({
     container: {
-        flex: 1,
+        flex:1,
         justifyContent: 'center',
         alignItems: 'center'
     },
